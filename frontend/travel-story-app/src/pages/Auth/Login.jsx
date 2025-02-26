@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import PasswordInput from "../../components/Input/PasswordInput";
 import { useNavigate } from "react-router-dom";
+import { validateEmail } from "../../utils/helper";
+import axiosInstance from "../../utils/axiosInstance";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -9,7 +11,46 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {};
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!password) {
+      setError("Please eneter the Password");
+      return;
+    }
+
+    setError("");
+
+    //Login API Call
+    try {
+      const response = await axiosInstance.post("/login", {
+        email: email,
+        password: password,
+      });
+
+      // Handle successful login response
+      if (response.data && response.data.accessToken) {
+        localStorage.setItem("token", response.data.accessToken);
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      // Handle login error
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setError(error.response.data.message);
+      } else {
+        setError("An unexpected error occurred. Please try login");
+      }
+    }
+  };
 
   return (
     <div className="h-screen bg-cyan-50 overflow-hidden relative">
@@ -49,6 +90,8 @@ const Login = () => {
                 setPassword(target.value);
               }}
             />
+
+            {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
 
             <button type="submit" className="btn-primary">
               LOGIN
