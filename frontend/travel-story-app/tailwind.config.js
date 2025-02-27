@@ -14,7 +14,7 @@ export default {
       },
       backgroundImage: {
         "login-bg-img": "url('./src/assets/images/bg-image.jpeg')",
-        "signup-bg-img": "url('./src/assets/images/signup-bg-image.jpeg')",
+        "signup-bg-img": "url('./src/assets/images/signup-bg-img.jpeg')",
       },
     },
   },
