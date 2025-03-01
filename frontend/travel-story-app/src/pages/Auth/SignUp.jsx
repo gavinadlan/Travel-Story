@@ -32,20 +32,21 @@ const SignUp = () => {
 
     setError("");
 
-    //Login API Call
+    //SignUp API Call
     try {
-      const response = await axiosInstance.post("/login", {
+      const response = await axiosInstance.post("/create-account", {
+        fullName: name,
         email: email,
         password: password,
       });
 
-      // Handle successful login response
+      // Handle successful signup response
       if (response.data && response.data.accessToken) {
         localStorage.setItem("token", response.data.accessToken);
         navigate("/dashboard");
       }
     } catch (error) {
-      // Handle login error
+      // Handle signup error
       if (
         error.response &&
         error.response.data &&
