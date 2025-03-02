@@ -31,7 +31,7 @@ Travel Story App is a comprehensive platform built using the MERN stack (MongoDB
 ### Frontend
 - React.js
 - React Router for navigation
-- Responsive CSS/SCSS styling
+- Responsive Tailwind CSS
 - Axios for API requests
 
 ### Backend
