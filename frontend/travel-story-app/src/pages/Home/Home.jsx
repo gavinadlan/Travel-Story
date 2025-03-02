@@ -3,7 +3,9 @@ import Navbar from "../../components/Navbar";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { MdAdd } from "react-icons/md";
+import Modal from "react-modal";
 import TravelStoryCard from "../../components/Cards/TravelStoryCard";
+import AddEditTravelStory from "./AddEditTravelStory";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -116,6 +118,40 @@ const Home = () => {
           <div className="w-[320px]"></div>
         </div>
       </div>
+
+      {/* Add & Edit Travel Story Model */}
+      <Modal
+        isOpen={openAddEditModal.isShown}
+        onRequestClose={() =>
+          setOpenAddEditModal({ isShown: false, type: "add", data: null })
+        }
+        style={{
+          overlay: {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        }}
+        className="model-box"
+      >
+        <div className="flex flex-col h-full">
+          <AddEditTravelStory
+            type={openAddEditModal.type}
+            storyInfo={openAddEditModal.data}
+            onClose={() =>
+              setOpenAddEditModal({ isShown: false, type: "add", data: null })
+            }
+            getAllTravelStories={getAllTravelStories}
+          />
+        </div>
+      </Modal>
 
       <button
         className="w-16 h-16 flex items-center justify-center rounded-full bg-primary hover:bg-cyan-400 fixed right-10 bottom-10"
