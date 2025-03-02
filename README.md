@@ -52,7 +52,7 @@ Travel Story App is a comprehensive platform built using the MERN stack (MongoDB
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/Travel-Story.git
+git clone https://github.com/gavinadlan/Travel-Story.git
 cd Travel-Story
 ```
 
