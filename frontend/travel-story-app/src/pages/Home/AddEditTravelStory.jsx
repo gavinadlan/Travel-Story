@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { MdAdd, MdDeleteOutline, MdUpdate, MdClose } from "react-icons/md";
 import DateSelector from "../../components/Input/DateSelector";
 import ImageSelector from "../../components/Input/ImageSelector";
+import TagInput from "../../components/Input/TagInput";
 
 const AddEditTravelStory = ({
   storyInfo,
@@ -13,9 +14,20 @@ const AddEditTravelStory = ({
   const [storyImg, setStoryImg] = useState(null);
   const [story, setStory] = useState("");
   const [visitedLocation, setVisitedLocation] = useState([]);
-  const [visitedDate, setVisitedDate] = useState(null);
+  const [visitedDate, setVisitedDate] = useState(new Date());
 
-  const handleAddOrUpdateClick = () => {};
+  const handleAddOrUpdateClick = () => {
+    console.log("Input Data:", {
+      title,
+      storyImg,
+      story,
+      visitedLocation,
+      visitedDate: visitedDate || new Date(),
+    });
+  };
+
+  // Delete story image and Update the story
+  const handleDeleteStoryImg = () => {};
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -59,18 +71,27 @@ const AddEditTravelStory = ({
             <DateSelector date={visitedDate} setDate={setVisitedDate} />
           </div>
 
-          <ImageSelector image={storyImg} setImage={setStoryImg} />
+          <ImageSelector
+            image={storyImg}
+            setImage={setStoryImg}
+            handleDeleteImg={handleDeleteStoryImg}
+          />
 
           <div className="flex flex-col gap-2 mt-4">
             <label className="input-label">STORY</label>
             <textarea
               type="text"
-              className="text-sm text-slate-950 outline-none bg-slate-50 p-2 rounded"
+              className="text-sm text-slate-950 outline-none bg-slate-50 p-2 rounded "
               placeholder="Your Story"
               rows={10}
               value={story}
               onChange={({ target }) => setStory(target.value)}
             />
+          </div>
+
+          <div className="pt-3">
+            <label className="input-label">VISITED LOCATIONS</label>
+            <TagInput tags={visitedLocation} setTags={setVisitedLocation} />
           </div>
         </div>
       </div>

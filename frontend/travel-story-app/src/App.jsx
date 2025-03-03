@@ -1,14 +1,17 @@
+import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-import React from "react";
+import Modal from "react-modal";
 
 import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
 import Home from "./pages/Home/Home";
+
+Modal.setAppElement("#root"); // Tambahkan ini di luar komponen App
 
 const App = () => {
   return (
@@ -27,10 +30,7 @@ const App = () => {
 
 // Define the Root component to handle the initial redirect
 const Root = () => {
-  // Check if token exists in localStorage
   const isAuthenticated = !!localStorage.getItem("token");
-
-  // Redirect to dashboard if authenticated, otherwise to login
   return isAuthenticated ? (
     <Navigate to="/dashboard" />
   ) : (
