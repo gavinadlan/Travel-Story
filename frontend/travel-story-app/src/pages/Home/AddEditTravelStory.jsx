@@ -5,6 +5,8 @@ import ImageSelector from "../../components/Input/ImageSelector";
 import TagInput from "../../components/Input/TagInput";
 import axiosInstance from "../../utils/axiosInstance";
 import moment from "moment";
+import uploadImage from "../../utils/uploadImage";
+import { toast } from "react-toastify";
 
 const AddEditTravelStory = ({
   storyInfo,
@@ -28,28 +30,39 @@ const AddEditTravelStory = ({
       // Upload image if present
       if (storyImg) {
         const imgUploadRes = await uploadImage(storyImg);
-        // Get image URL
-        imageUrl = imgUploadRes.imageURL || "";
+        // Gunakan imageUrl (huruf kecil)
+        imageUrl = imgUploadRes.imageUrl;
       }
 
-      const response = await axiosInstance.post("/add-travel-story", {
+      const payload = {
         title,
         story,
-        imageUrl: imageUrl || "",
+        imageUrl, // Pastikan menggunakan imageUrl
         visitedLocation,
         visitedDate: visitedDate
           ? moment(visitedDate).valueOf()
           : moment().valueOf(),
-      });
+      };
+
+      console.log("Payload being sent:", payload);
+
+      const response = await axiosInstance.post("/add-travel-story", payload);
 
       if (response.data && response.data.story) {
         toast.success("Story Added Successfully");
-        // Refresh stories
         getAllTravelStories();
-        // Close modal or form
         onClose();
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Full Error Object:", error);
+      console.error("Error Response:", error.response);
+      console.error("Error Message:", error.message);
+
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to add story. Please check your input."
+      );
+    }
   };
 
   // Update Travel story
