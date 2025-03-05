@@ -6,6 +6,7 @@ import { MdAdd } from "react-icons/md";
 import Modal from "react-modal";
 import TravelStoryCard from "../../components/Cards/TravelStoryCard";
 import AddEditTravelStory from "./AddEditTravelStory";
+import ViewTravelStory from "./ViewTravelStory";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -16,6 +17,12 @@ const Home = () => {
   const [allStories, setAllStories] = useState([]);
 
   const [openAddEditModal, setOpenAddEditModal] = useState({
+    isShown: false,
+    type: "add",
+    data: null,
+  });
+
+  const [openViewModal, setOpenViewModal] = useState({
     isShown: false,
     type: "add",
     data: null,
@@ -51,10 +58,14 @@ const Home = () => {
   };
 
   // Handle Edit Story Click
-  const handleEdit = (data) => {};
+  const handleEdit = (data) => {
+    setOpenAddEditModal({ isShown: true, type: "edit", data: data });
+  };
 
   // Handle Travel story Click
-  const handleViewStory = (data) => {};
+  const handleViewStory = (data) => {
+    setOpenViewModal({ isShown: true, data });
+  };
 
   // Handle Update Favourite
   const updateIsFavourite = async (storyData) => {
@@ -103,7 +114,6 @@ const Home = () => {
                       date={item.visitedDate}
                       visitedLocation={item.visitedLocation}
                       isFavourite={item.isFavourite}
-                      onEdit={() => handleEdit(item)}
                       onClick={() => handleViewStory(item)}
                       onFavouriteClick={() => updateIsFavourite(item)}
                     />
@@ -155,6 +165,45 @@ const Home = () => {
             getAllTravelStories={getAllTravelStories}
           />
         </div>
+      </Modal>
+
+      {/* View Travel Story Model */}
+      <Modal
+        isOpen={openViewModal.isShown}
+        onRequestClose={() =>
+          setOpenAddEditModal({ isShown: false, type: "add", data: null })
+        }
+        style={{
+          overlay: {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          content: {
+            position: "relative",
+            inset: "auto",
+            margin: "auto",
+            width: "90%",
+            maxWidth: "600px",
+            maxHeight: "80vh",
+            overflow: "auto",
+            borderRadius: "8px",
+            padding: "20px",
+          },
+        }}
+      >
+        <ViewTravelStory
+          storyInfo={openViewModal.data || null}
+          onClose={() => {
+            setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
+          }}
+          onEditClick={() => {
+            setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
+            handleEdit(openViewModal.data || null);
+          }}
+          onDeleteClick={() => {}}
+        />
       </Modal>
 
       <button
