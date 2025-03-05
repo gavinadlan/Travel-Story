@@ -54,23 +54,70 @@ const AddEditTravelStory = ({
 
       if (response.data && response.data.story) {
         toast.success("Story Added Successfully");
+        // Refresh stories
         getAllTravelStories();
+        // Close modal or form
         onClose();
       }
     } catch (error) {
-      console.error("Full Error Object:", error);
-      console.error("Error Response:", error.response);
-      console.error("Error Message:", error.message);
-
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to add story. Please check your input."
-      );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setError(error.response.data.message);
+      } else {
+        // Handle unexpected errors
+        setError("An unexpected error occurred. Please try again.");
+      }
     }
   };
 
   // Update Travel story
-  const updateTravelStory = async () => {};
+  const updateTravelStory = async () => {
+    const storyId = storyInfo._id;
+    try {
+      let imageUrl = storyInfo.imageUrl || "";
+
+      const postData = {
+        title,
+        story,
+        visitedLocation,
+        visitedDate: visitedDate
+          ? moment(visitedDate).valueOf()
+          : moment().valueOf(),
+        imageUrl, // Gunakan imageUrl yang sudah ada atau kosong
+      };
+
+      if (typeof storyImg === "object") {
+        // Upload New Image
+        const imgUploadRes = await uploadImage(storyImg);
+        imageUrl = imgUploadRes.imageUrl || "";
+        postData.imageUrl = imageUrl; // Update imageUrl di postData
+      }
+
+      const response = await axiosInstance.put(
+        "/edit-story/" + storyId,
+        postData
+      );
+
+      if (response.data && response.data.story) {
+        toast.success("Story Updated Successfully");
+        getAllTravelStories();
+        onClose();
+      }
+    } catch (error) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setError(error.response.data.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    }
+  };
 
   const handleAddOrUpdateClick = () => {
     console.log("Input Data:", {
