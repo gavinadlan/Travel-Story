@@ -5,11 +5,15 @@ import axiosInstance from "../../utils/axiosInstance";
 import { MdAdd } from "react-icons/md";
 import Modal from "react-modal";
 import TravelStoryCard from "../../components/Cards/TravelStoryCard";
-import AddEditTravelStory from "./AddEditTravelStory";
-import ViewTravelStory from "./ViewTravelStory";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AddEditTravelStory from "./AddEditTravelStory";
+import ViewTravelStory from "./ViewTravelStory";
+import EmptyCard from "../../components/Cards/EmptyCard";
+
+import EmptyImg from "../../assets/images/add-story.svg";
+
 const Home = () => {
   const navigate = useNavigate();
 
@@ -88,6 +92,35 @@ const Home = () => {
     }
   };
 
+  // Delete Story
+  const deleteTravelStory = async (data) => {
+    const storyId = data._id;
+
+    try {
+      const response = await axiosInstance.delete("/delete-story/" + storyId);
+
+      if (
+        response.data &&
+        response.data.message === "Travel story deleted successfully"
+      ) {
+        // Segera update state stories tanpa refresh
+        setAllStories((prevStories) =>
+          prevStories.filter((story) => story._id !== storyId)
+        );
+
+        // Tutup modal view
+        setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
+
+        // Tampilkan toast
+        toast.error("Story Deleted Successfully");
+      }
+    } catch (error) {
+      // Error handling
+      toast.error("Failed to delete story");
+      console.error("Delete Error:", error);
+    }
+  };
+
   useEffect(() => {
     getAllTravelStories();
     getUserInfo();
@@ -121,7 +154,11 @@ const Home = () => {
                 })}
               </div>
             ) : (
-              <>Empty Card here</>
+              <EmptyCard
+                imgSrc={EmptyImg}
+                message={`Start creating your first Travel Story! Click the 'Add' button to join 
+              down your thoughts, ideas, and memories. Let's get tarted!`}
+              />
             )}
           </div>
 
@@ -202,7 +239,9 @@ const Home = () => {
             setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
             handleEdit(openViewModal.data || null);
           }}
-          onDeleteClick={() => {}}
+          onDeleteClick={() => {
+            deleteTravelStory(openViewModal.data || null);
+          }}
         />
       </Modal>
 

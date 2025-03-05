@@ -107,6 +107,7 @@ const AddEditTravelStory = ({
         onClose();
       }
     } catch (error) {
+      console.log(error);
       if (
         error.response &&
         error.response.data &&
@@ -148,7 +149,39 @@ const AddEditTravelStory = ({
   };
 
   // Delete story image and Update the story
-  const handleDeleteStoryImg = () => {};
+  const handleDeleteStoryImg = async () => {
+    try {
+      // Hapus gambar
+      const deleteImgRes = await axiosInstance.delete("/delete-image", {
+        params: {
+          imageUrl: storyInfo.imageUrl,
+        },
+      });
+
+      // Perbarui cerita tanpa gambar
+      const storyId = storyInfo._id;
+      const postData = {
+        title,
+        story,
+        visitedLocation,
+        visitedDate: moment().valueOf(),
+        imageUrl: "",
+      };
+
+      const response = await axiosInstance.put(
+        "/edit-story/" + storyId,
+        postData
+      );
+
+      // Beri feedback ke pengguna
+      toast.success("Image deleted successfully");
+      setStoryImg(null);
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      toast.error("Failed to delete image");
+    }
+  };
+
   return (
     <div className="relative">
       <div className="flex items-center justify-between">
