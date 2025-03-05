@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import LOGO from "../assets/images/logo.svg";
 import ProfileInfo from "./Cards/ProfileInfo";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,8 @@ const Navbar = ({
   onSearchNote,
   handleClearSearch,
 }) => {
-  const [searchQuery, setLocalSearchQuery] = useState("");
+  console.log("onSearchNote:", onSearchNote);
+
   const isToken = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -21,8 +22,10 @@ const Navbar = ({
   };
 
   const handleSearch = () => {
-    if (searchQuery) {
+    if (searchQuery && typeof onSearchNote === "function") {
       onSearchNote(searchQuery);
+    } else {
+      console.error("onSearchNote is not a function or searchQuery is empty");
     }
   };
 
@@ -40,7 +43,6 @@ const Navbar = ({
           <SearchBar
             value={searchQuery}
             onChange={({ target }) => {
-              setLocalSearchQuery(target.value);
               setSearchQuery(target.value);
             }}
             handleSearch={handleSearch}

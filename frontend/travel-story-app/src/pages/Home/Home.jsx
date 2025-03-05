@@ -21,6 +21,7 @@ const Home = () => {
   const [allStories, setAllStories] = useState([]);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("");
 
   const [openAddEditModal, setOpenAddEditModal] = useState({
     isShown: false,
@@ -124,9 +125,29 @@ const Home = () => {
   };
 
   //Search Story
-  const onSearchStory = async (query) => {};
+  const onSearchStory = async (query) => {
+    try {
+      const response = await axiosInstance.get("search", {
+        params: {
+          query,
+        },
+      });
 
-  const handleClearSearch = () => {};
+      if (response.data && response.data.stories) {
+        // Ubah response.dat menjadi response.data
+        setFilterType("search");
+        setAllStories(response.data.stories);
+      }
+    } catch (error) {
+      // Handled unexpected errors  // Ganti "Handed" dengan "Handled"
+      console.log("An unexpected error occurred. Please try again.");
+    }
+  };
+
+  const handleClearSearch = () => {
+    setFilterType("");
+    getAllTravelStories();
+  };
 
   useEffect(() => {
     getAllTravelStories();
@@ -141,7 +162,7 @@ const Home = () => {
         userInfo={userInfo}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        handleSearch={onSearchStory}
+        onSearchNote={onSearchStory} // Pastikan nama ini benar dan nilai yang diteruskan adalah fungsi
         handleClearSearch={handleClearSearch}
       />
 
