@@ -12,9 +12,10 @@ import AddEditTravelStory from "./AddEditTravelStory";
 import ViewTravelStory from "./ViewTravelStory";
 import EmptyCard from "../../components/Cards/EmptyCard";
 
-import EmptyImg from "../../assets/images/add-story.svg";
 import { DayPicker } from "react-day-picker";
 import moment from "moment";
+import FilterInfoTite from "../../components/Cards/FilterInfoTite";
+import { getEmptyCardImg, getEmptyCardMessage } from "../../utils/helper";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
 
-  const [dateRange, setDateRange] = useState({ form: null, to: null });
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
 
   const [openAddEditModal, setOpenAddEditModal] = useState({
     isShown: false,
@@ -91,7 +92,14 @@ const Home = () => {
 
       if (response.data && response.data.story) {
         toast.success("Story Updated Successfully");
-        getAllTravelStories();
+
+        if (filterType === "search" && searchQuery) {
+          onSearchStory(searchQuery);
+        } else if (filterType === "date") {
+          filterStoriesByDate(dateRange);
+        } else {
+          getAllTravelStories();
+        }
       }
     } catch (error) {
       console.log("An unexpected error occured. Please try again");
@@ -179,6 +187,12 @@ const Home = () => {
     filterStoriesByDate(day);
   };
 
+  const resetFilter = () => {
+    setDateRange({ form: null, to: null });
+    setFilterType("");
+    getAllTravelStories();
+  };
+
   useEffect(() => {
     getAllTravelStories();
     getUserInfo();
@@ -197,6 +211,14 @@ const Home = () => {
       />
 
       <div className="container mx-auto py-10">
+        <FilterInfoTite
+          filterType={filterType}
+          filterDates={dateRange}
+          onClear={() => {
+            resetFilter();
+          }}
+        />
+
         <div className="flex gap-7">
           <div className="flex-1">
             {allStories.length > 0 ? (
@@ -219,9 +241,8 @@ const Home = () => {
               </div>
             ) : (
               <EmptyCard
-                imgSrc={EmptyImg}
-                message={`Start creating your first Travel Story! Click the 'Add' button to join 
-              down your thoughts, ideas, and memories. Let's get tarted!`}
+                imgSrc={getEmptyCardImg(filterType)}
+                message={getEmptyCardMessage(filterType)}
               />
             )}
           </div>
