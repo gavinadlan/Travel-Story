@@ -14,6 +14,7 @@ import EmptyCard from "../../components/Cards/EmptyCard";
 
 import EmptyImg from "../../assets/images/add-story.svg";
 import { DayPicker } from "react-day-picker";
+import moment from "moment";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -152,7 +153,25 @@ const Home = () => {
   };
 
   // Handle Filter Travel Story By Date Range
-  const filterStoriesByDate = async (day) => {};
+  const filterStoriesByDate = async (day) => {
+    try {
+      const startDate = day.from ? moment(day.from).valueOf() : null;
+      const endDate = day.to ? moment(day.to).valueOf() : null;
+
+      if (startDate && endDate) {
+        const response = await axiosInstance.get("/travel-stories/filter", {
+          params: { startDate, endDate },
+        });
+
+        if (response.data && response.data.stories) {
+          setFilterType("date");
+          setAllStories(response.data.stories);
+        }
+      }
+    } catch (error) {
+      console.log("An unexpected error occurred. Please try again.");
+    }
+  };
 
   // Handle Date Range Select
   const handleDayClick = (day) => {
