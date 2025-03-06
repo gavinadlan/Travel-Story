@@ -13,6 +13,7 @@ import ViewTravelStory from "./ViewTravelStory";
 import EmptyCard from "../../components/Cards/EmptyCard";
 
 import EmptyImg from "../../assets/images/add-story.svg";
+import { DayPicker } from "react-day-picker";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -23,6 +24,8 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
 
+  const [dateRange, setDateRange] = useState({ form: null, to: null });
+
   const [openAddEditModal, setOpenAddEditModal] = useState({
     isShown: false,
     type: "add",
@@ -31,7 +34,6 @@ const Home = () => {
 
   const [openViewModal, setOpenViewModal] = useState({
     isShown: false,
-    type: "add",
     data: null,
   });
 
@@ -149,6 +151,15 @@ const Home = () => {
     getAllTravelStories();
   };
 
+  // Handle Filter Travel Story By Date Range
+  const filterStoriesByDate = async (day) => {};
+
+  // Handle Date Range Select
+  const handleDayClick = (day) => {
+    setDateRange(day);
+    filterStoriesByDate(day);
+  };
+
   useEffect(() => {
     getAllTravelStories();
     getUserInfo();
@@ -162,7 +173,7 @@ const Home = () => {
         userInfo={userInfo}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        onSearchNote={onSearchStory} // Pastikan nama ini benar dan nilai yang diteruskan adalah fungsi
+        onSearchNote={onSearchStory}
         handleClearSearch={handleClearSearch}
       />
 
@@ -196,7 +207,19 @@ const Home = () => {
             )}
           </div>
 
-          <div className="w-[320px]"></div>
+          <div className="w-[350px]">
+            <div className="bg-white border border-slate-200 shadow-lg shadow-slate-200/60 rounded-lg">
+              <div className="p-3">
+                <DayPicker
+                  captionLayout="dropdown-buttons"
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDayClick}
+                  pageNavigation
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

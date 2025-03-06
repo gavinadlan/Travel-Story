@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+.rdp-button,
+.rdp-day,
+.rdp-head_cell,
+.rdp-caption_label {
+  font-weight: normal !important;
+}
+
+.rdp-day_selected {
+  font-weight: medium !important;
+}
+
 .rdp-root {
   --rdp-accent-color: #01b0cb; /* Change the accent color to indigo. */
   --rdp-accent-background-color: #dffbff; /* Change the accent background color. */
