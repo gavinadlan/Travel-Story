@@ -1,21 +1,25 @@
 # Travel Story App
 
 ## 🌍 Overview
+
 Travel Story App is a full-stack MERN (MongoDB, Express, React, Node.js) application designed for users to document and share their travel experiences. Users can securely register, log in, and create travel stories enriched with images and dates.
 
 ## ✨ Features
 
 ### 🔐 User Authentication
+
 - Secure signup & login
 - JWT-based authentication
 - Protected routes for authenticated users
 
 ### 🗺️ Travel Story Management
+
 - Create, edit, and delete travel stories
 - Upload images
 - Add travel dates and locations
 
 ### 🔍 Enhanced User Experience
+
 - Search and filter stories by date range
 - Mark favorite stories
 - Responsive design (desktop & mobile)
@@ -23,12 +27,14 @@ Travel Story App is a full-stack MERN (MongoDB, Express, React, Node.js) applica
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - React.js
 - React Router
 - Tailwind CSS
 - Axios
 
 ### Backend
+
 - Node.js & Express.js
 - MongoDB & Mongoose
 - JWT authentication
@@ -37,6 +43,7 @@ Travel Story App is a full-stack MERN (MongoDB, Express, React, Node.js) applica
 ## 🚀 Getting Started
 
 ### 📌 Prerequisites
+
 - Node.js (v14+)
 - MongoDB (local or Atlas)
 - npm or yarn
@@ -73,11 +80,13 @@ Travel Story App is a full-stack MERN (MongoDB, Express, React, Node.js) applica
 ## 📡 API Endpoints
 
 ### 🔑 Authentication
+
 - `POST /create-account` - Register user
 - `POST /login` - Authenticate user
 - `GET /get-user` - Fetch user details
 
 ### 🏞️ Travel Stories
+
 - `POST /add-travel-story` - Create a story
 - `GET /get-all-stories` - Retrieve user stories
 - `PUT /edit-story/:id` - Update a story
@@ -85,24 +94,21 @@ Travel Story App is a full-stack MERN (MongoDB, Express, React, Node.js) applica
 - `PUT /update-is-favourite/:id` - Mark/unmark as favorite
 
 ### 📸 Image Management
+
 - `POST /image-upload` - Upload images
 - `DELETE /delete-image` - Remove uploaded images
 
 ### 🔍 Search & Filter
+
 - `GET /search` - Search by query
 - `GET /travel-stories/filter` - Filter stories by date
 
 ## 📌 Future Enhancements
+
 - Social features (comments, likes)
 - User profiles & statistics
 - Map integration
 - Public/private stories
 - Tagging system
 
-## 📜 License
-This project is licensed under the MIT License.
-
----
-
 > 💡 Inspired by travelers worldwide who love sharing their adventures!
-
