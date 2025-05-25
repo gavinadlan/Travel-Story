@@ -123,7 +123,7 @@ app.post("/image-upload", upload.single("image"), async (req, res) => {
         .json({ error: true, message: "No image uploaded" });
     }
 
-    const imageUrl = `http://localhost:8000/uploads/${req.file.filename}`;
+    const imageUrl = `https://travel-story-tx4c.onrender.com/uploads/${req.file.filename}`;
 
     res.status(200).json({ imageUrl });
   } catch (error) {
@@ -238,7 +238,8 @@ app.put("/edit-story/:id", authenticateToken, async (req, res) => {
         .json({ error: true, message: "Travel story not found" });
     }
 
-    const placeholderImgUrl = "http://localhost:8000/assets/1.png";
+    const placeholderImgUrl =
+      "https://travel-story-tx4c.onrender.com/assets/1.png";
 
     travelStory.title = title;
     travelStory.story = story;
