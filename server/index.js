@@ -178,23 +178,45 @@ app.delete("/delete-image", async (req, res) => {
   }
 
   try {
-    // Hapus hanya jika gambar berasal dari uploads
-    if (!imageUrl.includes("/uploads/")) {
+    // Decode URL untuk menangani karakter yang ter-encode
+    const decodedImageUrl = decodeURIComponent(imageUrl);
+
+    // Validasi bahwa URL berasal dari domain server
+    const serverHost =
+      process.env.SERVER_HOST || "travel-story-tx4c.onrender.com";
+    if (!decodedImageUrl.includes(serverHost)) {
       return res
         .status(400)
-        .json({ error: true, message: "Invalid image URL" });
+        .json({ error: true, message: "Invalid image domain" });
     }
 
-    const filename = path.basename(new URL(imageUrl).pathname);
+    // Ekstrak pathname dari URL
+    const parsedUrl = new URL(decodedImageUrl);
+    const filename = path.basename(parsedUrl.pathname);
+
+    // Pastikan file berada di direktori uploads
+    if (!parsedUrl.pathname.startsWith("/uploads/")) {
+      return res
+        .status(400)
+        .json({ error: true, message: "Invalid image path" });
+    }
+
     const filePath = path.join(__dirname, "uploads", filename);
+
+    // Log untuk debugging
+    console.log(`Attempting to delete image: ${decodedImageUrl}`);
+    console.log(`Resolved file path: ${filePath}`);
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      console.log(`Image deleted: ${filePath}`);
       res.status(200).json({ message: "Image deleted successfully" });
     } else {
+      console.log(`Image not found: ${filePath}`);
       res.status(404).json({ error: true, message: "Image not found" });
     }
   } catch (error) {
+    console.error("Error deleting image:", error);
     res.status(500).json({ error: true, message: error.message });
   }
 });
