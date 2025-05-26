@@ -21,7 +21,7 @@ app.use(express.json());
 
 // Middleware untuk logging request
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
@@ -35,7 +35,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: allowedOrigins,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
@@ -50,7 +50,25 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 app.use("/uploads", express.static(uploadDir));
-app.use("/assets", express.static(path.join(__dirname, "assets")));
+
+// Image Upload Endpoint
+app.post("/image-upload", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ error: true, message: "No image uploaded" });
+    }
+
+    const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
+      req.file.filename
+    }`;
+    res.status(200).json({ imageUrl });
+  } catch (error) {
+    console.error("Upload Error:", error);
+    res.status(500).json({ error: true, message: "Internal server error" });
+  }
+});
 
 // Create Account
 app.post("/create-account", async (req, res) => {
@@ -175,47 +193,42 @@ app.delete("/delete-image", async (req, res) => {
     const { imageUrl } = req.query;
 
     if (!imageUrl) {
-      return res.status(400).json({
-        error: true,
-        message: "Image URL is required",
-      });
+      return res
+        .status(400)
+        .json({ error: true, message: "Image URL required" });
     }
 
+    // Decode and validate URL
     const decodedUrl = decodeURIComponent(imageUrl);
     const parsedUrl = new URL(decodedUrl);
 
-    // Validasi domain dan path
+    // Security checks
     if (
       !parsedUrl.pathname.startsWith("/uploads/") ||
-      !parsedUrl.hostname.includes("travel-story-tx4c.onrender.com")
+      parsedUrl.hostname !== "travel-story-tx4c.onrender.com"
     ) {
-      return res.status(400).json({
-        error: true,
-        message: "Invalid image URL",
-      });
+      return res
+        .status(400)
+        .json({ error: true, message: "Invalid image URL" });
     }
 
+    // Extract filename
     const filename = path.basename(parsedUrl.pathname);
     const filePath = path.join(uploadDir, filename);
 
+    // Debugging logs
+    console.log("Deleting file:", filePath);
+    console.log("File exists:", fs.existsSync(filePath));
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      return res.json({
-        success: true,
-        message: "Image deleted",
-      });
+      return res.json({ success: true, message: "Image deleted" });
     }
 
-    return res.status(404).json({
-      error: true,
-      message: "Image not found",
-    });
+    res.status(404).json({ error: true, message: "Image not found" });
   } catch (error) {
-    console.error("Delete image error:", error);
-    res.status(500).json({
-      error: true,
-      message: "Internal server error",
-    });
+    console.error("Delete Error:", error);
+    res.status(500).json({ error: true, message: "Internal server error" });
   }
 });
 
@@ -232,18 +245,11 @@ app.post("/add-travel-story", authenticateToken, async (req, res) => {
     const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
     const { userId } = req.user;
 
-    // Validasi tipe data
-    if (
-      typeof title !== "string" ||
-      typeof story !== "string" ||
-      typeof visitedLocation !== "string" ||
-      typeof imageUrl !== "string" ||
-      isNaN(new Date(visitedDate).getTime())
-    ) {
-      return res.status(400).json({
-        error: true,
-        message: "Invalid input format",
-      });
+    // Validation
+    if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
+      return res
+        .status(400)
+        .json({ error: true, message: "All fields required" });
     }
 
     const newStory = await TravelStory.create({
@@ -255,16 +261,10 @@ app.post("/add-travel-story", authenticateToken, async (req, res) => {
       userId,
     });
 
-    res.status(201).json({
-      success: true,
-      story: newStory,
-    });
+    res.status(201).json(newStory);
   } catch (error) {
-    console.error("Add story error:", error);
-    res.status(500).json({
-      error: true,
-      message: "Internal server error",
-    });
+    console.error("Add Story Error:", error);
+    res.status(500).json({ error: true, message: "Internal server error" });
   }
 });
 
@@ -465,6 +465,7 @@ app.get("/travel-stories/filter", authenticateToken, async (req, res) => {
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log("Upload directory:", uploadDir);
 });
 
 module.exports = app;
