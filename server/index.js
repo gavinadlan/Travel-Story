@@ -19,7 +19,40 @@ mongoose.connect(config.connectionString);
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "*" }));
+
+const allowedOrigins = [
+  "https://travel-story-alpha.vercel.app",
+  "http://localhost:3000",
+  "https://travel-story-tx4c.onrender.com",
+];
+
+// Enhanced CORS configuration
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
+    exposedHeaders: ["*", "Authorization"],
+  })
+);
+
+// Handle preflight requests
+app.options("*", cors());
+
+// Serve static files
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadDir));
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // Create Account
 app.post("/create-account", async (req, res) => {
@@ -114,7 +147,7 @@ app.get("/get-user", authenticateToken, async (req, res) => {
   });
 });
 
-// Route to handle image upload
+// Image Upload
 app.post("/image-upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
@@ -123,7 +156,10 @@ app.post("/image-upload", upload.single("image"), async (req, res) => {
         .json({ error: true, message: "No image uploaded" });
     }
 
-    const imageUrl = `https://travel-story-tx4c.onrender.com/uploads/${req.file.filename}`;
+    // Gunakan URL absolut yang benar
+    const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
+      req.file.filename
+    }`;
 
     res.status(200).json({ imageUrl });
   } catch (error) {
@@ -142,15 +178,17 @@ app.delete("/delete-image", async (req, res) => {
   }
 
   try {
-    // Extract the filename from the imageUrl
-    const filename = path.basename(decodeURIComponent(imageUrl));
+    // Hapus hanya jika gambar berasal dari uploads
+    if (!imageUrl.includes("/uploads/")) {
+      return res
+        .status(400)
+        .json({ error: true, message: "Invalid image URL" });
+    }
 
-    // Define the file path
+    const filename = path.basename(new URL(imageUrl).pathname);
     const filePath = path.join(__dirname, "uploads", filename);
 
-    // Check if the file exists
     if (fs.existsSync(filePath)) {
-      // Delete the file from the uploads folder
       fs.unlinkSync(filePath);
       res.status(200).json({ message: "Image deleted successfully" });
     } else {
@@ -163,6 +201,9 @@ app.delete("/delete-image", async (req, res) => {
 
 // Serve static files from the uploads and assets directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // Add Travel Story
@@ -277,7 +318,8 @@ app.delete("/delete-story/:id", authenticateToken, async (req, res) => {
     const filename = path.basename(imageUrl);
 
     //Delete the file path
-    const filePath = path.join(__dirname, "uploads", filename);
+    const sanitizedFilename = path.basename(filename);
+    const filePath = path.join(__dirname, "uploads", sanitizedFilename);
 
     // Delete the image file from uploads folder
     fs.unlink(filePath, (err) => {
@@ -363,5 +405,8 @@ app.get("/travel-stories/filter", authenticateToken, async (req, res) => {
   }
 });
 
-app.listen(8000);
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 module.exports = app;
