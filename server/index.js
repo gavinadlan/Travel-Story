@@ -9,7 +9,6 @@ const jwt = require("jsonwebtoken");
 const upload = require("./multer");
 const fs = require("fs");
 const path = require("path");
-
 const { authenticateToken } = require("./utilities");
 
 const User = require("./models/user.model");
@@ -20,6 +19,12 @@ mongoose.connect(config.connectionString);
 const app = express();
 app.use(express.json());
 
+// Middleware untuk logging request
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 const allowedOrigins = [
   "https://travel-story-alpha.vercel.app",
   "http://localhost:3000",
@@ -29,17 +34,10 @@ const allowedOrigins = [
 // Enhanced CORS configuration
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-    methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
-    exposedHeaders: ["*", "Authorization"],
   })
 );
 
@@ -151,73 +149,73 @@ app.get("/get-user", authenticateToken, async (req, res) => {
 app.post("/image-upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
-      return res
-        .status(400)
-        .json({ error: true, message: "No image uploaded" });
+      return res.status(400).json({
+        error: true,
+        message: "No image uploaded",
+      });
     }
 
-    // Gunakan URL absolut yang benar
     const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
       req.file.filename
     }`;
 
     res.status(200).json({ imageUrl });
   } catch (error) {
-    res.status(500).json({ error: true, message: error.message });
+    console.error("Upload error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
   }
 });
 
 // Delete an image from uploads folder
 app.delete("/delete-image", async (req, res) => {
-  const { imageUrl } = req.query;
-
-  if (!imageUrl) {
-    return res
-      .status(400)
-      .json({ error: true, message: "imageUrl parameter is required" });
-  }
-
   try {
-    // Decode URL untuk menangani karakter yang ter-encode
-    const decodedImageUrl = decodeURIComponent(imageUrl);
+    const { imageUrl } = req.query;
 
-    // Validasi bahwa URL berasal dari domain server
-    const serverHost =
-      process.env.SERVER_HOST || "travel-story-tx4c.onrender.com";
-    if (!decodedImageUrl.includes(serverHost)) {
-      return res
-        .status(400)
-        .json({ error: true, message: "Invalid image domain" });
+    if (!imageUrl) {
+      return res.status(400).json({
+        error: true,
+        message: "Image URL is required",
+      });
     }
 
-    // Ekstrak pathname dari URL
-    const parsedUrl = new URL(decodedImageUrl);
+    const decodedUrl = decodeURIComponent(imageUrl);
+    const parsedUrl = new URL(decodedUrl);
+
+    // Validasi domain dan path
+    if (
+      !parsedUrl.pathname.startsWith("/uploads/") ||
+      !parsedUrl.hostname.includes("travel-story-tx4c.onrender.com")
+    ) {
+      return res.status(400).json({
+        error: true,
+        message: "Invalid image URL",
+      });
+    }
+
     const filename = path.basename(parsedUrl.pathname);
-
-    // Pastikan file berada di direktori uploads
-    if (!parsedUrl.pathname.startsWith("/uploads/")) {
-      return res
-        .status(400)
-        .json({ error: true, message: "Invalid image path" });
-    }
-
-    const filePath = path.join(__dirname, "uploads", filename);
-
-    // Log untuk debugging
-    console.log(`Attempting to delete image: ${decodedImageUrl}`);
-    console.log(`Resolved file path: ${filePath}`);
+    const filePath = path.join(uploadDir, filename);
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`Image deleted: ${filePath}`);
-      res.status(200).json({ message: "Image deleted successfully" });
-    } else {
-      console.log(`Image not found: ${filePath}`);
-      res.status(404).json({ error: true, message: "Image not found" });
+      return res.json({
+        success: true,
+        message: "Image deleted",
+      });
     }
+
+    return res.status(404).json({
+      error: true,
+      message: "Image not found",
+    });
   } catch (error) {
-    console.error("Error deleting image:", error);
-    res.status(500).json({ error: true, message: error.message });
+    console.error("Delete image error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -230,33 +228,43 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // Add Travel Story
 app.post("/add-travel-story", authenticateToken, async (req, res) => {
-  const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
-  const { userId } = req.user;
-
-  // Validate required fields
-  if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
-    return res
-      .status(400)
-      .json({ error: true, message: "All fields are required" });
-  }
-
-  // Convert visitedDate from milliseconds to Date object
-  const parsedVisitedDate = new Date(parseInt(visitedDate));
-
   try {
-    const travelStory = new TravelStory({
+    const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
+    const { userId } = req.user;
+
+    // Validasi tipe data
+    if (
+      typeof title !== "string" ||
+      typeof story !== "string" ||
+      typeof visitedLocation !== "string" ||
+      typeof imageUrl !== "string" ||
+      isNaN(new Date(visitedDate).getTime())
+    ) {
+      return res.status(400).json({
+        error: true,
+        message: "Invalid input format",
+      });
+    }
+
+    const newStory = await TravelStory.create({
       title,
       story,
       visitedLocation,
-      userId,
       imageUrl,
-      visitedDate: parsedVisitedDate,
+      visitedDate: new Date(visitedDate),
+      userId,
     });
 
-    await travelStory.save();
-    res.status(201).json({ story: travelStory, message: "Added Successfully" });
+    res.status(201).json({
+      success: true,
+      story: newStory,
+    });
   } catch (error) {
-    res.status(400).json({ error: true, message: error.message });
+    console.error("Add story error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -277,82 +285,109 @@ app.get("/get-all-stories", authenticateToken, async (req, res) => {
 
 // Edit Travel Story
 app.put("/edit-story/:id", authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
-  const { userId } = req.user;
-
-  // Validate required fields
-  if (!title || !story || !visitedLocation || !visitedDate) {
-    return res
-      .status(400)
-      .json({ error: true, message: "All fields are required" });
-  }
-
-  // Convert visitedDate from milliseconds to Date object
-  const parsedVisitedDate = new Date(parseInt(visitedDate));
-
   try {
-    // Find the travel story by ID and ensure it belongs to the authenticated user
-    const travelStory = await TravelStory.findOne({ _id: id, userId: userId });
+    const { id } = req.params;
+    const { title, story, visitedLocation, imageUrl, visitedDate } = req.body;
+    const { userId } = req.user;
 
-    if (!travelStory) {
-      return res
-        .status(404)
-        .json({ error: true, message: "Travel story not found" });
+    const storyToUpdate = await TravelStory.findOne({
+      _id: id,
+      userId,
+    });
+
+    if (!storyToUpdate) {
+      return res.status(404).json({
+        error: true,
+        message: "Story not found",
+      });
     }
 
-    const placeholderImgUrl =
-      "https://travel-story-tx4c.onrender.com/assets/1.png";
+    // Simpan URL gambar lama untuk cleanup
+    const oldImageUrl = storyToUpdate.imageUrl;
 
-    travelStory.title = title;
-    travelStory.story = story;
-    travelStory.visitedLocation = visitedLocation;
-    travelStory.imageUrl = imageUrl || placeholderImgUrl;
-    travelStory.visitedDate = parsedVisitedDate;
+    // Update field
+    storyToUpdate.title = title || storyToUpdate.title;
+    storyToUpdate.story = story || storyToUpdate.story;
+    storyToUpdate.visitedLocation =
+      visitedLocation || storyToUpdate.visitedLocation;
+    storyToUpdate.imageUrl = imageUrl || storyToUpdate.imageUrl;
+    storyToUpdate.visitedDate = visitedDate
+      ? new Date(visitedDate)
+      : storyToUpdate.visitedDate;
 
-    await travelStory.save();
-    res.status(200).json({ story: travelStory, message: "Update Successful" });
+    await storyToUpdate.save();
+
+    // Hapus gambar lama jika diganti
+    if (oldImageUrl !== imageUrl && oldImageUrl.includes("/uploads/")) {
+      try {
+        const parsedUrl = new URL(oldImageUrl);
+        const filename = path.basename(parsedUrl.pathname);
+        const filePath = path.join(uploadDir, filename);
+
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (cleanupError) {
+        console.error("Gagal menghapus gambar lama:", cleanupError);
+      }
+    }
+
+    res.json({
+      success: true,
+      story: storyToUpdate,
+    });
   } catch (error) {
-    res.status(500).json({ error: true, message: error.message });
+    console.error("Edit story error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
   }
 });
 
 // Delete a travel story
 app.delete("/delete-story/:id", authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const { userId } = req.user;
-
   try {
-    // Find the travel story by ID and ensure it belongs to the authenticated user
-    const travelStory = await TravelStory.findOne({ _id: id, userId: userId });
+    const { id } = req.params;
+    const { userId } = req.user;
 
-    if (!travelStory) {
-      return res
-        .status(404)
-        .json({ error: true, message: "Travel story not found" });
-    }
-
-    // Delete the travel story from the database
-    await travelStory.deleteOne({ _id: id, userId: userId });
-
-    // Extract the filename from the imageUrl
-    const imageUrl = travelStory.imageUrl;
-    const filename = path.basename(imageUrl);
-
-    //Delete the file path
-    const sanitizedFilename = path.basename(filename);
-    const filePath = path.join(__dirname, "uploads", sanitizedFilename);
-
-    // Delete the image file from uploads folder
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Failed to delete image file:", err);
-      }
+    const story = await TravelStory.findOneAndDelete({
+      _id: id,
+      userId,
     });
 
-    res.status(200).json({ message: "Travel story deleted successfully" });
+    if (!story) {
+      return res.status(404).json({
+        error: true,
+        message: "Story not found",
+      });
+    }
+
+    // Hapus gambar hanya jika dari uploads
+    if (story.imageUrl.includes("/uploads/")) {
+      try {
+        const parsedUrl = new URL(story.imageUrl);
+        const filename = path.basename(parsedUrl.pathname);
+        const filePath = path.join(uploadDir, filename);
+
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (cleanupError) {
+        console.error("Gagal menghapus gambar:", cleanupError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Story deleted",
+    });
   } catch (error) {
-    res.status(500).json({ error: true, message: error.message });
+    console.error("Delete story error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
   }
 });
 
@@ -431,4 +466,5 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
 module.exports = app;
