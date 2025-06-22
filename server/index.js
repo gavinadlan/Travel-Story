@@ -12,30 +12,9 @@ const cloudinary = require("cloudinary").v2;
 const User = require("./models/user.model");
 const TravelStory = require("./models/travelStory.model");
 
-mongoose.connect(process.env.MONGODB_URI || config.connectionString, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000,
-  retryWrites: true,
-  w: "majority",
-});
-
-const db = mongoose.connection;
-db.on("error", (error) => {
-  console.error("MongoDB connection error:", error);
-  process.exit(1);
-});
-db.once("open", () => {
-  console.log("Connected to MongoDB Atlas");
-});
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
 const app = express();
+
+// 1. PERTAMA, SETUP EXPRESS DAN CORS
 app.use(express.json({ limit: "10mb" }));
 
 // Middleware untuk logging request
@@ -63,110 +42,45 @@ app.use(
 // Handle preflight requests
 app.options("*", cors());
 
-// Endpoint upload gambar baru dengan Cloudinary
-app.post("/image-upload", async (req, res) => {
-  try {
-    const { image } = req.body; // Data base64 dari frontend
-
-    if (!image) {
-      return res.status(400).json({ error: true, message: "No image data" });
-    }
-
-    // Upload ke Cloudinary
-    const result = await cloudinary.uploader.upload(
-      `data:image/jpeg;base64,${image}`,
-      {
-        folder: "travel-story-app",
-        resource_type: "image",
-      }
-    );
-
-    res.status(200).json({ imageUrl: result.secure_url });
-  } catch (error) {
-    console.error("Cloudinary Upload Error:", error);
-    res.status(500).json({
-      error: true,
-      message: "Image upload failed",
-      details: error.message,
-    });
-  }
+// 2. ENDPOINT AWAL YANG RINGAN
+app.get("/", (req, res) => {
+  res.sendStatus(200);
 });
 
-// Create Account
-app.post("/create-account", async (req, res) => {
-  const { fullName, email, password } = req.body;
-
-  if (!fullName || !email || !password) {
-    return res
-      .status(400)
-      .json({ error: true, message: "All fields are required" });
-  }
-
-  const isUser = await User.findOne({ email });
-  if (isUser) {
-    return res
-      .status(400)
-      .json({ error: true, message: "User already exixts" });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  const user = new User({
-    fullName,
-    email,
-    password: hashedPassword,
-  });
-
-  await user.save();
-
-  const accessToken = jwt.sign(
-    { userId: user._id },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-      expiresIn: "72h",
-    }
-  );
-
-  return res.status(200).json({
-    error: false,
-    user: { fullName: user.fullName, email: user.email },
-    accessToken,
-    message: "Registration successful",
+app.get("/health", (req, res) => {
+  const dbStatus =
+    mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  res.json({
+    status: "ok",
+    database: dbStatus,
+    uptime: process.uptime(),
   });
 });
 
-// Login
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+// 3. KONEKSI DATABASE DAN CLOUDINARY SETELAH SERVER START
+const PORT = process.env.PORT || 8000;
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and Password are required" });
-  }
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(400).json({ message: "User not found" });
-  }
-
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(400).json({ message: "Invalid Credentials" });
-  }
-
-  const accessToken = jwt.sign(
-    { userId: user._id },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-      expiresIn: "72h",
-    }
-  );
-
-  return res.json({
-    error: false,
-    message: "Login Successful",
-    user: { fullName: user.fullName, email: user.email },
-    accessToken,
+  // Konfigurasi Cloudinary
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
   });
+  console.log("Cloudinary configured");
+
+  // Koneksi MongoDB - DILAKUKAN SETELAH SERVER START
+  mongoose
+    .connect(process.env.MONGODB_URI || config.connectionString, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+    })
+    .then(() => console.log("Connected to MongoDB Atlas"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 });
 
 // Get User
@@ -391,11 +305,6 @@ app.get("/health", (req, res) => {
     database: dbStatus,
     uptime: process.uptime(),
   });
-});
-
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;
