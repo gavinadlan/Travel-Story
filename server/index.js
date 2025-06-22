@@ -99,6 +99,64 @@ app.get("/get-user", authenticateToken, async (req, res) => {
   });
 });
 
+// Login endpoint (perbaikan)
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validasi input
+    if (!email || !password) {
+      return res.status(400).json({
+        error: true,
+        message: "Email and Password are required",
+      });
+    }
+
+    // Cari user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        error: true,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Verifikasi password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        error: true,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Buat token - gunakan nama environment yang konsisten
+    const accessToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || process.env.ACCESS_TOKEN_SECRET, // backup
+      { expiresIn: "72h" }
+    );
+
+    // Response konsisten
+    return res.json({
+      error: false,
+      message: "Login Successful",
+      user: {
+        id: user._id,
+        name: user.name, // gunakan field yang ada di model
+        email: user.email,
+      },
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+});
+
 // Add Travel Story
 app.post("/add-travel-story", authenticateToken, async (req, res) => {
   try {
