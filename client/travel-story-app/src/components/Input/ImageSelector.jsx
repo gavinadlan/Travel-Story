@@ -5,10 +5,24 @@ import { MdDeleteOutline } from "react-icons/md";
 const ImageSelector = ({ image, setImage, handleDeleteImg }) => {
   const inputRef = useRef(null);
 
-  const handleImageChange = (event) => {
+  const handleImageChange = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      setImage(file);
+    if (!file) return;
+
+    // Tampilkan preview
+    const reader = new FileReader();
+    reader.onload = () => setImage(reader.result);
+    reader.readAsDataURL(file);
+
+    // Upload ke backend
+    try {
+      const base64Data = reader.result.split(",")[1];
+      const response = await axiosInstance.post("/upload-image", {
+        image: base64Data,
+      });
+      setImage(response.data.imageUrl);
+    } catch (error) {
+      console.error("Upload failed:", error);
     }
   };
 
