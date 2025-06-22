@@ -188,6 +188,7 @@ const Home = () => {
   const resetFilter = () => {
     setDateRange({ from: null, to: null });
     setFilterType("");
+    setSearchQuery("");
     getAllTravelStories();
   };
 

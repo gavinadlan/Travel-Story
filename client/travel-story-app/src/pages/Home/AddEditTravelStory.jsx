@@ -78,7 +78,7 @@ const AddEditTravelStory = ({
 
       if (response.data) {
         toast.success("Story Added Successfully");
-        getAllTravelStories();
+        await getAllTravelStories();
         onClose();
       }
     } catch (error) {
