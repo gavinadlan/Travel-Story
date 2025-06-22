@@ -261,8 +261,10 @@ const Home = () => {
 
       {/* Add & Edit Travel Story Model */}
       <Modal
-        isOpen={openViewModal.isShown}
-        onRequestClose={() => setOpenViewModal({ isShown: false, data: null })} // Fixed close function
+        isOpen={openAddEditModal.isShown}
+        onRequestClose={() =>
+          setOpenAddEditModal({ isShown: false, type: "add", data: null })
+        }
         style={{
           overlay: {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -283,27 +285,20 @@ const Home = () => {
           },
         }}
       >
-        <ViewTravelStory
-          storyInfo={openViewModal.data || null}
-          onClose={() => {
-            setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
-          }}
-          onEditClick={() => {
-            setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
-            handleEdit(openViewModal.data || null);
-          }}
-          onDeleteClick={() => {
-            deleteTravelStory(openViewModal.data || null);
-          }}
+        <AddEditTravelStory
+          type={openAddEditModal.type}
+          storyInfo={openAddEditModal.data}
+          onClose={() =>
+            setOpenAddEditModal({ isShown: false, type: "add", data: null })
+          }
+          getAllTravelStories={getAllTravelStories}
         />
       </Modal>
 
       {/* View Travel Story Model */}
       <Modal
         isOpen={openViewModal.isShown}
-        onRequestClose={() =>
-          setOpenAddEditModal({ isShown: false, type: "add", data: null })
-        }
+        onRequestClose={() => setOpenViewModal({ isShown: false, data: null })}
         style={{
           overlay: {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
