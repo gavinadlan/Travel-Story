@@ -44,14 +44,12 @@ const Home = () => {
     try {
       const response = await axiosInstance.get("/get-user");
       if (response.data && response.data.user) {
-        // Set user info if data exists
         setUserInfo(response.data.user);
       }
     } catch (error) {
-      if (error.response.status === 401) {
-        // Clear storage if unauthorized
+      if (error.response?.status === 401) {
         localStorage.clear();
-        navigate("/login"); // Redirect to Login
+        navigate("/login");
       }
     }
   };
@@ -64,7 +62,7 @@ const Home = () => {
         setAllStories(response.data.stories);
       }
     } catch (error) {
-      console.log("An unexpected error occurred. Please try again.");
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -188,7 +186,7 @@ const Home = () => {
   };
 
   const resetFilter = () => {
-    setDateRange({ form: null, to: null });
+    setDateRange({ from: null, to: null });
     setFilterType("");
     getAllTravelStories();
   };
@@ -196,8 +194,6 @@ const Home = () => {
   useEffect(() => {
     getAllTravelStories();
     getUserInfo();
-
-    return () => {};
   }, []);
 
   return (
@@ -265,10 +261,8 @@ const Home = () => {
 
       {/* Add & Edit Travel Story Model */}
       <Modal
-        isOpen={openAddEditModal.isShown}
-        onRequestClose={() =>
-          setOpenAddEditModal({ isShown: false, type: "add", data: null })
-        }
+        isOpen={openViewModal.isShown}
+        onRequestClose={() => setOpenViewModal({ isShown: false, data: null })} // Fixed close function
         style={{
           overlay: {
             backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -289,16 +283,19 @@ const Home = () => {
           },
         }}
       >
-        <div className="flex flex-col h-full">
-          <AddEditTravelStory
-            type={openAddEditModal.type}
-            storyInfo={openAddEditModal.data}
-            onClose={() =>
-              setOpenAddEditModal({ isShown: false, type: "add", data: null })
-            }
-            getAllTravelStories={getAllTravelStories}
-          />
-        </div>
+        <ViewTravelStory
+          storyInfo={openViewModal.data || null}
+          onClose={() => {
+            setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
+          }}
+          onEditClick={() => {
+            setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
+            handleEdit(openViewModal.data || null);
+          }}
+          onDeleteClick={() => {
+            deleteTravelStory(openViewModal.data || null);
+          }}
+        />
       </Modal>
 
       {/* View Travel Story Model */}

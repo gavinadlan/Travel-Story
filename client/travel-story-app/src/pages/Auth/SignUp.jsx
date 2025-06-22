@@ -26,7 +26,7 @@ const SignUp = () => {
     }
 
     if (!password) {
-      setError("Please eneter the Password");
+      setError("Please enter the Password");
       return;
     }
 
@@ -54,7 +54,7 @@ const SignUp = () => {
       ) {
         setError(error.response.data.message);
       } else {
-        setError("An unexpected error occurred. Please try login");
+        setError("An unexpected error occurred. Please try again");
       }
     }
   };
@@ -117,10 +117,10 @@ const SignUp = () => {
             <p className="text-xs text-slate-500 text-center my-4">Or</p>
 
             <button
-              type="submit"
+              type="button"
               className="btn-primary btn-light"
               onClick={() => {
-                Navigate("/login");
+                navigate("/login");
               }}
             >
               LOGIN

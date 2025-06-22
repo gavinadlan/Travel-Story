@@ -11,30 +11,30 @@ import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
 import Home from "./pages/Home/Home";
 
-Modal.setAppElement("#root"); // Tambahkan ini di luar komponen App
+Modal.setAppElement("#root");
 
 const App = () => {
   return (
     <div>
       <Router>
         <Routes>
-          <Route path="/" exact element={<Root />} />
-          <Route path="/dashboard" exact element={<Home />} />
-          <Route path="/login" exact element={<Login />} />
-          <Route path="/signUp" exact element={<SignUp />} />
+          <Route
+            path="/"
+            element={
+              localStorage.getItem("token") ? (
+                <Navigate to="/dashboard" />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route path="/dashboard" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />{" "}
+          {/* Changed to lowercase */}
         </Routes>
       </Router>
     </div>
-  );
-};
-
-// Define the Root component to handle the initial redirect
-const Root = () => {
-  const isAuthenticated = !!localStorage.getItem("token");
-  return isAuthenticated ? (
-    <Navigate to="/dashboard" />
-  ) : (
-    <Navigate to="/login" />
   );
 };
 

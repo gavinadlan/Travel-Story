@@ -20,7 +20,7 @@ const Login = () => {
     }
 
     if (!password) {
-      setError("Please eneter the Password");
+      setError("Please enter the Password");
       return;
     }
 
@@ -100,10 +100,10 @@ const Login = () => {
             <p className="text-xs text-slate-500 text-center my-4">Or</p>
 
             <button
-              type="submit"
+              type="button"
               className="btn-primary btn-light"
               onClick={() => {
-                Navigate("/signUp");
+                navigate("/signup");
               }}
             >
               CREATE ACCOUNT
