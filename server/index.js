@@ -57,23 +57,27 @@ cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 console.log("Cloudinary configured");
 
 // =====================================
 // ENDPOINT UPLOAD GAMBAR KE CLOUDINARY
 // =====================================
-app.post("/upload-image", upload.single("image"), async (req, res) => {
+app.post("/upload-image", async (req, res) => {
   try {
-    if (!req.file) {
+    const { image } = req.body;
+
+    if (!image) {
       return res
         .status(400)
         .json({ error: true, message: "No image uploaded" });
     }
 
     // Upload ke Cloudinary
-    cloudinary.uploader
-      .upload_stream({ resource_type: "auto" }, (error, result) => {
+    cloudinary.uploader.upload(
+      `data:image/jpeg;base64,${image}`,
+      (error, result) => {
         if (error) {
           console.error("Cloudinary upload error:", error);
           return res
@@ -81,8 +85,8 @@ app.post("/upload-image", upload.single("image"), async (req, res) => {
             .json({ error: true, message: "Failed to upload image" });
         }
         res.json({ imageUrl: result.secure_url });
-      })
-      .end(req.file.buffer);
+      }
+    );
   } catch (error) {
     console.error("Upload error:", error);
     res.status(500).json({ error: true, message: "Internal server error" });
