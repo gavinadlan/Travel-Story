@@ -1,3 +1,8 @@
+console.log("Starting server initialization...");
+console.log("PORT:", process.env.PORT);
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("MONGODB_URI:", process.env.MONGODB_URI ? "Set" : "Not set");
+
 require("dotenv").config();
 
 const config = require("./config.json");
@@ -481,9 +486,8 @@ mongoose
     console.log("Connected to MongoDB Atlas");
 
     const PORT = process.env.PORT || 8000;
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
-      console.log("Environment:", process.env.NODE_ENV || "development");
     });
   })
   .catch((err) => {
