@@ -36,7 +36,7 @@ cloudinary.config({
 });
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 // Middleware untuk logging request
 app.use((req, res, next) => {
@@ -62,6 +62,35 @@ app.use(
 
 // Handle preflight requests
 app.options("*", cors());
+
+// Endpoint upload gambar baru dengan Cloudinary
+app.post("/image-upload", async (req, res) => {
+  try {
+    const { image } = req.body; // Data base64 dari frontend
+
+    if (!image) {
+      return res.status(400).json({ error: true, message: "No image data" });
+    }
+
+    // Upload ke Cloudinary
+    const result = await cloudinary.uploader.upload(
+      `data:image/jpeg;base64,${image}`,
+      {
+        folder: "travel-story-app",
+        resource_type: "image",
+      }
+    );
+
+    res.status(200).json({ imageUrl: result.secure_url });
+  } catch (error) {
+    console.error("Cloudinary Upload Error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Image upload failed",
+      details: error.message,
+    });
+  }
+});
 
 // Create Account
 app.post("/create-account", async (req, res) => {
@@ -156,12 +185,6 @@ app.get("/get-user", authenticateToken, async (req, res) => {
   });
 });
 
-// Serve static files from the uploads and assets directory
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-app.use("/assets", express.static(path.join(__dirname, "assets")));
-
 // Add Travel Story
 app.post("/add-travel-story", authenticateToken, async (req, res) => {
   try {
@@ -206,7 +229,7 @@ app.get("/get-all-stories", authenticateToken, async (req, res) => {
   }
 });
 
-// Edit Travel Story - HAPUS LOGIKA HAPUS GAMBAR LOKAL
+// Edit Travel Story
 app.put("/edit-story/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -255,32 +278,7 @@ app.put("/edit-story/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// Endpoint upload gambar baru dengan Cloudinary
-app.post("/image-upload", async (req, res) => {
-  try {
-    const { image } = req.body; // Data base64 dari frontend
-
-    if (!image) {
-      return res.status(400).json({ error: true, message: "No image data" });
-    }
-
-    // Upload ke Cloudinary
-    const result = await cloudinary.uploader.upload(image, {
-      folder: "travel-story-app",
-    });
-
-    res.status(200).json({ imageUrl: result.secure_url });
-  } catch (error) {
-    console.error("Cloudinary Upload Error:", error);
-    res.status(500).json({
-      error: true,
-      message: "Image upload failed",
-      details: error.message,
-    });
-  }
-});
-
-// Delete story - HAPUS LOGIKA HAPUS GAMBAR LOKAL
+// Delete a travel story
 app.delete("/delete-story/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -398,7 +396,6 @@ app.get("/health", (req, res) => {
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log("Upload directory:", uploadDir);
 });
 
 module.exports = app;
