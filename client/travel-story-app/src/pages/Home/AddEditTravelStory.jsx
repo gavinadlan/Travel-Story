@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { MdAdd, MdDeleteOutline, MdUpdate, MdClose } from "react-icons/md";
+import { MdAdd, MdUpdate, MdClose } from "react-icons/md";
 import DateSelector from "../../components/Input/DateSelector";
 import ImageSelector from "../../components/Input/ImageSelector";
 import TagInput from "../../components/Input/TagInput";
 import axiosInstance from "../../utils/axiosInstance";
 import moment from "moment";
-import uploadImage from "../../utils/uploadImage";
+import { uploadImage } from "../../utils/uploadImage"; // Pastikan path benar
 import { toast } from "react-toastify";
 
 const AddEditTravelStory = ({
@@ -31,43 +31,36 @@ const AddEditTravelStory = ({
     try {
       let imageUrl = "";
 
-      // Upload image if present
-      if (storyImg) {
+      // Upload image jika ada dan berupa file (bukan string URL)
+      if (storyImg && typeof storyImg !== "string") {
         const imgUploadRes = await uploadImage(storyImg);
-        // Gunakan imageUrl (huruf kecil)
         imageUrl = imgUploadRes.imageUrl;
+      } else if (storyImg) {
+        // Jika berupa string URL, gunakan langsung
+        imageUrl = storyImg;
       }
 
       const payload = {
         title,
         story,
-        imageUrl, // Pastikan menggunakan imageUrl
+        imageUrl,
         visitedLocation,
         visitedDate: visitedDate
           ? moment(visitedDate).valueOf()
           : moment().valueOf(),
       };
 
-      console.log("Payload being sent:", payload);
-
       const response = await axiosInstance.post("/add-travel-story", payload);
 
       if (response.data && response.data.story) {
         toast.success("Story Added Successfully");
-        // Refresh stories
         getAllTravelStories();
-        // Close modal or form
         onClose();
       }
     } catch (error) {
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+      if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
-        // Handle unexpected errors
         setError("An unexpected error occurred. Please try again.");
       }
     }
@@ -79,6 +72,15 @@ const AddEditTravelStory = ({
     try {
       let imageUrl = storyInfo.imageUrl || "";
 
+      // Jika ada gambar baru yang diupload (berupa file)
+      if (storyImg && typeof storyImg !== "string") {
+        const imgUploadRes = await uploadImage(storyImg);
+        imageUrl = imgUploadRes.imageUrl;
+      } else if (storyImg === null) {
+        // Jika gambar dihapus
+        imageUrl = "";
+      }
+
       const postData = {
         title,
         story,
@@ -86,15 +88,8 @@ const AddEditTravelStory = ({
         visitedDate: visitedDate
           ? moment(visitedDate).valueOf()
           : moment().valueOf(),
-        imageUrl, // Gunakan imageUrl yang sudah ada atau kosong
+        imageUrl,
       };
-
-      if (typeof storyImg === "object") {
-        // Upload New Image
-        const imgUploadRes = await uploadImage(storyImg);
-        imageUrl = imgUploadRes.imageUrl || "";
-        postData.imageUrl = imageUrl; // Update imageUrl di postData
-      }
 
       const response = await axiosInstance.put(
         "/edit-story/" + storyId,
@@ -107,12 +102,7 @@ const AddEditTravelStory = ({
         onClose();
       }
     } catch (error) {
-      console.log(error);
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+      if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
         setError("An unexpected error occurred. Please try again.");
@@ -121,14 +111,6 @@ const AddEditTravelStory = ({
   };
 
   const handleAddOrUpdateClick = () => {
-    console.log("Input Data:", {
-      title,
-      storyImg,
-      story,
-      visitedLocation,
-      visitedDate: visitedDate || new Date(),
-    });
-
     if (!title) {
       setError("Please enter the title");
       return;
@@ -148,38 +130,9 @@ const AddEditTravelStory = ({
     }
   };
 
-  // Delete story image and Update the story
-  const handleDeleteStoryImg = async () => {
-    try {
-      // Hapus gambar
-      const deleteImgRes = await axiosInstance.delete("/delete-image", {
-        params: {
-          imageUrl: storyInfo.imageUrl,
-        },
-      });
-
-      // Perbarui cerita tanpa gambar
-      const storyId = storyInfo._id;
-      const postData = {
-        title,
-        story,
-        visitedLocation,
-        visitedDate: moment().valueOf(),
-        imageUrl: "",
-      };
-
-      const response = await axiosInstance.put(
-        "/edit-story/" + storyId,
-        postData
-      );
-
-      // Beri feedback ke pengguna
-      toast.success("Image deleted successfully");
-      setStoryImg(null);
-    } catch (error) {
-      console.error("Error deleting image:", error);
-      toast.error("Failed to delete image");
-    }
+  // Fungsi hapus gambar (hanya reset state)
+  const handleRemoveImage = () => {
+    setStoryImg(null);
   };
 
   return (
@@ -196,11 +149,9 @@ const AddEditTravelStory = ({
                 <MdAdd className="text-lg" /> ADD STORY
               </button>
             ) : (
-              <>
-                <button className="btn-small" onClick={handleAddOrUpdateClick}>
-                  <MdUpdate className="text-lg" /> UPDATE STORY
-                </button>
-              </>
+              <button className="btn-small" onClick={handleAddOrUpdateClick}>
+                <MdUpdate className="text-lg" /> UPDATE STORY
+              </button>
             )}
 
             <button className="" onClick={onClose}>
@@ -232,14 +183,13 @@ const AddEditTravelStory = ({
           <ImageSelector
             image={storyImg}
             setImage={setStoryImg}
-            handleDeleteImg={handleDeleteStoryImg}
+            handleDeleteImg={handleRemoveImage}
           />
 
           <div className="flex flex-col gap-2 mt-4">
             <label className="input-label">STORY</label>
             <textarea
-              type="text"
-              className="text-sm text-slate-950 outline-none bg-slate-50 p-2 rounded "
+              className="text-sm text-slate-950 outline-none bg-slate-50 p-2 rounded"
               placeholder="Your Story"
               rows={10}
               value={story}

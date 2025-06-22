@@ -1,33 +1,43 @@
 import axiosInstance from "./axiosInstance";
 
-const uploadImage = async (imageFile) => {
-  const formData = new FormData();
-  // Append image file to form data
-  formData.append("image", imageFile);
-
+/**
+ * Mengupload gambar ke Cloudinary via backend
+ * @param {File} file - File gambar yang akan diupload
+ * @returns {Promise<{imageUrl: string}>} Objek berisi URL gambar
+ */
+export const uploadImage = async (file) => {
   try {
-    console.log("Uploading image:", imageFile.name);
-    console.log("Image file details:", {
-      name: imageFile.name,
-      size: imageFile.size,
-      type: imageFile.type,
+    // Membaca file sebagai base64
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        // Format: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ..."
+        const result = reader.result;
+        // Ekstrak bagian base64 setelah comma
+        resolve(result.split(",")[1]);
+      };
+
+      reader.onerror = (error) => {
+        reject(error);
+      };
+
+      reader.readAsDataURL(file);
     });
 
-    const response = await axiosInstance.post("/image-upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data", // Set header for file upload
-      },
+    // Mengirim ke backend
+    const response = await axiosInstance.post("/image-upload", {
+      image: base64Data,
     });
 
-    console.log("Image upload response:", response.data);
-    return response.data; // Return response data
+    return response.data;
   } catch (error) {
-    console.error(
-      "Error uploading the image:",
-      error.response?.data || error.message
-    );
-    throw error; // Rethrow error for handling
+    console.error("Upload error:", error);
+
+    // Format error untuk ditampilkan di UI
+    const errorMessage =
+      error.response?.data?.message || error.message || "Image upload failed";
+
+    throw new Error(errorMessage);
   }
 };
-
-export default uploadImage;

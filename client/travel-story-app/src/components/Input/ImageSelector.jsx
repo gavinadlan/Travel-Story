@@ -1,10 +1,9 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { FaRegFileImage } from "react-icons/fa";
 import { MdDeleteOutline } from "react-icons/md";
 
 const ImageSelector = ({ image, setImage, handleDeleteImg }) => {
   const inputRef = useRef(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
 
   const handleImageChange = (event) => {
     const file = event.target.files[0];
@@ -17,66 +16,68 @@ const ImageSelector = ({ image, setImage, handleDeleteImg }) => {
     inputRef.current.click();
   };
 
-  const handleRemoveImage = () => {
-    setImage(null);
-    handleDeleteImg();
+  // Tampilkan preview gambar
+  const getImageUrl = () => {
+    if (typeof image === "string") {
+      return image; // URL dari Cloudinary
+    } else if (image) {
+      return URL.createObjectURL(image); // File lokal
+    }
+    return null;
   };
 
-  useEffect(() => {
-    // If the image prop is a string (URL), set it as the pre URL
-    if (typeof image === "string") {
-      setPreviewUrl(image);
-    } else if (image) {
-      // If the image prop is a File object, create a preview URL
-      setPreviewUrl(URL.createObjectURL(image));
-    } else {
-      // If there is no image, clear the preview URL
-      setPreviewUrl(null);
-    }
-
-    return () => {
-      if (previewUrl && typeof previewUrl === "string" && !image) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [image]);
+  const imageUrl = getImageUrl();
 
   return (
-    <div>
-      <input
-        type="file"
-        accept="image/*"
-        ref={inputRef}
-        onChange={handleImageChange}
-        className="hidden"
-      />
+    <div className="flex flex-col gap-2">
+      <label className="input-label">STORY IMAGE</label>
 
-      {!image ? (
-        <button
-          className="w-full h-[220px] flex flex-col items-center justify-center gap-4 bg-slate-50 rounded border border-slate-200/50"
-          onClick={() => onChooseFile()}
-        >
-          <div className="w-14 h-14 flex items-center justify-center bg-cyan-50 rounded-full border border-cyan-100">
-            <FaRegFileImage className="text-xl text-cyan-500" />
-          </div>
-
-          <p className="text-sm text-slate-500">Browse image file to upload</p>
-        </button>
-      ) : (
-        <div className="w-full relative">
+      {imageUrl ? (
+        <div className="relative">
           <img
-            src={previewUrl}
-            alt="Selected"
-            className="w-full h-[300px] object-cover rounded-lg"
+            src={imageUrl}
+            alt="Story"
+            className="w-full h-64 object-cover rounded-lg"
           />
-
           <button
-            className="btn-small btn-delete absolute top-2 right-2"
-            onClick={handleRemoveImage}
+            type="button"
+            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+            onClick={handleDeleteImg}
           >
-            <MdDeleteOutline className="text-lg" />
+            <MdDeleteOutline className="text-xl" />
           </button>
         </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-slate-50">
+          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+            <svg
+              className="w-8 h-8 text-slate-400"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 20 16"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+              />
+            </svg>
+            <p className="mb-2 text-sm text-slate-400">
+              <span className="font-semibold">Click to upload</span>
+            </p>
+            <p className="text-xs text-slate-400">PNG, JPG (MAX. 5MB)</p>
+          </div>
+          <input
+            type="file"
+            className="hidden"
+            onChange={handleImageChange}
+            accept="image/*"
+            ref={inputRef}
+          />
+        </label>
       )}
     </div>
   );
