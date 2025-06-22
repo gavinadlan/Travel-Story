@@ -26,7 +26,7 @@ export const uploadImage = async (file) => {
     });
 
     // Mengirim ke backend
-    const response = await axiosInstance.post("/image-upload", {
+    const response = await axiosInstance.post("/upload-image", {
       image: base64Data,
     });
 
