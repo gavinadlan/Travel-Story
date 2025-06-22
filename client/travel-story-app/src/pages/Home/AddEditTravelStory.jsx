@@ -29,13 +29,17 @@ const AddEditTravelStory = ({
   const uploadImage = async (file) => {
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("image", file);
+      // Konversi file ke base64
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = (error) => reject(error);
+      });
 
-      const response = await axiosInstance.post("/upload-image", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      // Kirim sebagai JSON
+      const response = await axiosInstance.post("/upload-image", {
+        image: base64Data,
       });
 
       setIsUploading(false);
