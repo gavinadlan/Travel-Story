@@ -44,19 +44,27 @@ app.use(
   cors({
     origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "cache-control",
-      "x-requested-with",
-      "accept",
-    ],
+    allowedHeaders: "*", // Izinkan semua header
     credentials: true,
   })
 );
 
 // Handle preflight requests
-app.options("*", cors());
+app.options("*", (req, res) => {
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://travel-story-alpha.vercel.app"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "content-type, authorization, cache-control, pragma, expires"
+  );
+  res.sendStatus(200);
+});
 
 // Configure Cloudinary
 cloudinary.config({
